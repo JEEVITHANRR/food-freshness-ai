@@ -1,0 +1,56 @@
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# Environment variables (secrets)
+.env
+
+# Large model files (downloaded at runtime)
+*.pt
+models/*.pth
+models/freshness_classifier/
+
+# Dataset (not needed for deployment)
+dataset/
+
+# Uploads (runtime generated)
+static/uploads/
+uploads/
+
+# Database (runtime generated)
+*.db
+
+# Results (runtime generated)
+results/
+
+# YOLO runs
+runs/
+yolov8/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+flask.log
+
+# Backup files
+*_backup.py
+
+# Excel data files
+*.xlsx
