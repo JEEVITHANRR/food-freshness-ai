@@ -54,34 +54,83 @@ st.set_page_config(
 # Custom CSS
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+    
+    html, body, [class*="st-"] {
+        font-family: 'Inter', sans-serif;
+    }
+    
     .main-header {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #2E7D32;
+        font-size: 3rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #2E7D32 0%, #4CAF50 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         text-align: center;
-        padding: 1rem;
+        padding: 2rem 0;
+        letter-spacing: -0.05em;
     }
+    
+    .stApp {
+        background-color: #f8fafc;
+    }
+    
+    .css-1r6slb0, .e1ewe7hr3 {
+        background-color: white;
+        border-radius: 20px;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        padding: 1.5rem;
+    }
+    
     .metric-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 1rem;
-        border-radius: 10px;
-        color: white;
-        text-align: center;
+        background: white;
+        padding: 1.5rem;
+        border-radius: 24px;
+        border: 1px solid #e2e8f0;
+        text-align: left;
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05);
     }
+    
     .fresh-badge {
-        background-color: #4CAF50;
-        color: white;
-        padding: 0.25rem 0.5rem;
-        border-radius: 5px;
+        background-color: #dcfce7;
+        color: #166534;
+        padding: 0.4rem 0.8rem;
+        border-radius: 99px;
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        border: 1px solid #bbf7d0;
     }
+    
     .rotten-badge {
-        background-color: #F44336;
-        color: white;
-        padding: 0.25rem 0.5rem;
-        border-radius: 5px;
+        background-color: #fee2e2;
+        color: #991b1b;
+        padding: 0.4rem 0.8rem;
+        border-radius: 99px;
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        border: 1px solid #fecaca;
     }
+    
+    .scan-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 32px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+    }
+
     .stButton > button {
-        width: 100%;
+        border-radius: 12px;
+        font-weight: 700;
+        padding: 0.75rem 1.5rem;
+        transition: all 0.2s;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -275,8 +324,8 @@ def scan_page():
             with col2:
                 st.subheader("🔍 Analysis Results")
                 
-                with st.spinner("Analyzing..."):
-                    # Run detection based on method
+                with st.spinner("Analyzing Vision Pipeline..."):
+                    # Layer 1: Object Detection
                     if "Gemini" in detection_method and GEMINI_AVAILABLE:
                         result = detect_and_count_items(file_path)
                         method = "gemini"
@@ -285,12 +334,26 @@ def scan_page():
                         result = {
                             "items": [{"name": name, "count": count, "category": "Food"} 
                                      for name, count in counts.items()],
-                            "total_count": sum(counts.values())
+                            "total_count": sum(counts.values()),
+                            "method_used": "yolo"
                         }
                         method = "yolo"
                     else:
-                        result = {"error": "Selected detection module is missing its dependencies."}
+                        result = {"error": "No detection module available", "items": [], "total_count": 0}
                         method = "none"
+
+                    # Layer 2: Freshness Analysis Fallback
+                    if result.get("items") and not any(i.get('freshness') for i in result['items']):
+                        for item in result['items']:
+                            if RESNET_AVAILABLE:
+                                freshness = predict_freshness(file_path)
+                                item['freshness'] = freshness['label']
+                                item['freshness_confidence'] = freshness['confidence']
+                    
+                    # Layer 3: OCR Product Info
+                    ocr_result = {}
+                    if OCR_AVAILABLE:
+                        ocr_result = extract_product_info(file_path)
                     
                     # Display results
                     if result.get("error"):
@@ -559,12 +622,13 @@ def settings_page():
     if st.button("🗑️ Clear History", type="secondary"):
         st.warning("This will delete all your scan history. Are you sure?")
 
-# Analytics page - NEW
+# Analytics page - PREMIUM
 def analytics_page():
-    st.markdown("<h1 class='main-header'>📈 Analytics & Reports</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-header'>📈 Insight Analytics</h1>", unsafe_allow_html=True)
     
-    import matplotlib.pyplot as plt
-    import numpy as np
+    import plotly.express as px
+    import plotly.graph_objects as go
+    import pandas as pd
     
     # Get inventory data
     inventory = db.get_user_inventory(st.session_state.user_id)
@@ -577,75 +641,52 @@ def analytics_page():
     # Summary metrics
     col1, col2, col3, col4 = st.columns(4)
     
-    total_items = len(inventory) if inventory else 0
-    fresh_items = sum(1 for i in inventory if i.get('freshness') == 'Fresh') if inventory else 0
-    rotten_items = sum(1 for i in inventory if i.get('freshness') == 'Rotten') if inventory else 0
+    total_items = sum(i['quantity'] for i in inventory) if inventory else 0
+    fresh_items = sum(i['quantity'] for i in inventory if i.get('freshness') == 'Fresh') if inventory else 0
+    rotten_items = sum(i['quantity'] for i in inventory if i.get('freshness') == 'Rotten') if inventory else 0
     total_scans = len(history) if history else 0
     
     with col1:
-        st.metric("Total Items", total_items)
+        st.markdown(f"<div class='metric-card'><h4>📦 Total Items</h4><h2>{total_items}</h2></div>", unsafe_allow_html=True)
     with col2:
-        st.metric("Fresh Items", fresh_items, delta=None)
+        st.markdown(f"<div class='metric-card'><h4>🍏 Fresh</h4><h2 style='color:#2ecc71'>{fresh_items}</h2></div>", unsafe_allow_html=True)
     with col3:
-        st.metric("Rotten Items", rotten_items, delta=None)
+        st.markdown(f"<div class='metric-card'><h4>🍎 Spoiled</h4><h2 style='color:#e74c3c'>{rotten_items}</h2></div>", unsafe_allow_html=True)
     with col4:
-        st.metric("Total Scans", total_scans)
+        st.markdown(f"<div class='metric-card'><h4>📷 Scans</h4><h2>{total_scans}</h2></div>", unsafe_allow_html=True)
     
-    st.divider()
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    # Charts row 1
-    col1, col2 = st.columns(2)
+    # Row 1: Charts
+    c1, c2 = st.columns(2)
     
-    with col1:
-        st.subheader("🥧 Freshness Distribution")
+    with c1:
+        st.subheader("🥧 Freshness Health")
         if inventory:
-            fresh_count = sum(1 for i in inventory if i.get('freshness') == 'Fresh')
-            rotten_count = sum(1 for i in inventory if i.get('freshness') == 'Rotten')
-            unknown_count = total_items - fresh_count - rotten_count
-            
-            fig, ax = plt.subplots(figsize=(6, 6))
-            sizes = [fresh_count, rotten_count, unknown_count]
-            labels = [f'Fresh ({fresh_count})', f'Rotten ({rotten_count})', f'Unknown ({unknown_count})']
-            colors = ['#2ecc71', '#e74c3c', '#95a5a6']
-            explode = (0.05, 0.05, 0)
-            
-            # Remove zero values
-            non_zero = [(s, l, c, e) for s, l, c, e in zip(sizes, labels, colors, explode) if s > 0]
-            if non_zero:
-                sizes, labels, colors, explode = zip(*non_zero)
-                ax.pie(sizes, labels=labels, colors=colors, explode=explode,
-                       autopct='%1.1f%%', startangle=90, shadow=True)
-                ax.axis('equal')
-            st.pyplot(fig)
-            plt.close()
-        else:
-            st.info("No data")
+            df_fresh = pd.DataFrame([
+                {"Status": "Fresh", "Count": fresh_items},
+                {"Status": "Rotten", "Count": rotten_items},
+                {"Status": "Unknown", "Count": total_items - fresh_items - rotten_items}
+            ])
+            fig = px.pie(df_fresh, values='Count', names='Status', 
+                         color='Status', color_discrete_map={'Fresh':'#2ecc71', 'Rotten':'#e74c3c', 'Unknown':'#95a5a6'},
+                         hole=0.5)
+            fig.update_layout(margin=dict(t=0, b=0, l=0, r=0))
+            st.plotly_chart(fig, use_container_width=True)
     
-    with col2:
-        st.subheader("📊 Category Breakdown")
+    with c2:
+        st.subheader("📊 Category Mix")
         if inventory:
             categories = {}
             for item in inventory:
                 cat = item.get('category', 'Other') or 'Other'
-                categories[cat] = categories.get(cat, 0) + 1
+                categories[cat] = categories.get(cat, 0) + item.get('quantity', 1)
             
-            fig, ax = plt.subplots(figsize=(8, 6))
-            cats = list(categories.keys())
-            counts = list(categories.values())
-            colors = plt.cm.Set3(np.linspace(0, 1, len(cats)))
-            
-            bars = ax.bar(cats, counts, color=colors, edgecolor='black')
-            ax.set_ylabel('Count')
-            ax.set_title('Items by Category')
-            for bar, count in zip(bars, counts):
-                ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1,
-                       str(count), ha='center', fontweight='bold')
-            plt.xticks(rotation=45, ha='right')
-            plt.tight_layout()
-            st.pyplot(fig)
-            plt.close()
-        else:
-            st.info("No data")
+            df_cat = pd.DataFrame([{"Category": k, "Count": v} for k, v in categories.items()])
+            fig = px.bar(df_cat, x='Category', y='Count', color='Category',
+                         color_discrete_sequence=px.colors.qualitative.Pastel)
+            fig.update_layout(showlegend=False, margin=dict(t=0, b=0, l=0, r=0))
+            st.plotly_chart(fig, use_container_width=True)
     
     st.divider()
     
