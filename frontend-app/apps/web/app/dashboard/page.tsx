@@ -103,7 +103,7 @@ export default function Dashboard() {
     if (apiKey) formData.append("api_key", apiKey);
 
     try {
-      const response = await fetch("/api/scan", {
+      const response = await fetch(`${API}/api/scan`, {
         method: "POST",
         body: formData,
       });
