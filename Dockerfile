@@ -31,4 +31,4 @@ COPY --chown=user . .
 EXPOSE 7860
 
 # Command to run the application using the port required by Hugging Face
-CMD ["uvicorn", "fastapi_server:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
