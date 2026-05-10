@@ -16,8 +16,8 @@ export async function POST(req: NextRequest) {
     }
 
     // List of models to try in order of preference
-    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b"];
-    let lastError = null;
+    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
+    let lastError: any = null;
     let data = null;
 
     // Convert file to base64 once
@@ -44,12 +44,13 @@ export async function POST(req: NextRequest) {
       }
     `;
 
+    // Initialize genAI with v1 for maximum compatibility
+    const genAI = new GoogleGenerativeAI(apiKey);
+
     // Try models one by one
     for (const modelName of modelsToTry) {
       try {
-        console.log(`Attempting scan with model: ${modelName}`);
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: modelName });
+        const model = genAI.getGenerativeModel({ model: modelName }, { apiVersion: "v1" });
 
         const result = await model.generateContent([
           prompt,
@@ -67,21 +68,22 @@ export async function POST(req: NextRequest) {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         const jsonString = jsonMatch ? jsonMatch[0] : text;
         data = JSON.parse(jsonString);
-        data.model_used = modelName; // Track which one worked
+        data.model_used = modelName;
         
         break; // Success!
       } catch (err: any) {
-        console.warn(`Model ${modelName} failed:`, err.message);
         lastError = err;
-        continue; // Try next model
+        console.error(`Gemini Error (${modelName}):`, err.message);
+        continue;
       }
     }
 
     if (!data) {
-      throw lastError || new Error("All AI models failed to process the image");
+      return NextResponse.json({ 
+        success: false, 
+        error: `AI failed: ${lastError?.message || "Unknown error"}. Please ensure your API key from AI Studio is valid and has the Generative Language API enabled.` 
+      }, { status: 500 });
     }
-
-    return NextResponse.json({ success: true, data });
 
     return NextResponse.json({ success: true, data });
 
