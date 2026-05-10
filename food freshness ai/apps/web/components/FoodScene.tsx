@@ -39,15 +39,15 @@ export default function FoodScene() {
         <PerspectiveCamera makeDefault position={[0, 0, 10]} fov={50} />
         <ambientLight intensity={0.5} />
         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} color="#10b981" />
+        <pointLight position={[-10, -10, -10]} intensity={0.5} color="#4edea3" />
         
-        <FloatingObject position={[-4, 2, 0]} color="#10b981" speed={1.5} distort={0.4} />
-        <FloatingObject position={[5, -1, -2]} color="#059669" speed={1.2} distort={0.3} />
-        <FloatingObject position={[-2, -3, -4]} color="#34d399" speed={1.8} distort={0.5} />
+        <FloatingObject position={[-4, 2, 0]} color="#4edea3" speed={1.5} distort={0.4} />
+        <FloatingObject position={[5, -1, -2]} color="#2dd4bf" speed={1.2} distort={0.3} />
+        <FloatingObject position={[-2, -3, -4]} color="#059669" speed={1.8} distort={0.5} />
         
         <Environment preset="city" />
         
-        <gridHelper args={[20, 20, 0x10b981, 0x10b981]} rotation={[Math.PI / 2, 0, 0]} position={[0, 0, -10]} />
+        <gridHelper args={[20, 20, 0x4edea3, 0x1a211d]} rotation={[Math.PI / 2, 0, 0]} position={[0, 0, -10]} />
       </Canvas>
     </div>
   );

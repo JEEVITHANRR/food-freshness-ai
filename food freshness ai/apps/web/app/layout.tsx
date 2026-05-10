@@ -1,10 +1,12 @@
-import { Geist, Geist_Mono } from "next/font/google"
+import { Geist, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google"
 
 import "@workspace/ui/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@workspace/ui/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'})
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
+const geist = Geist({ subsets: ["latin"], variable: "--font-heading" });
 
 const fontMono = Geist_Mono({
   subsets: ["latin"],
