@@ -103,7 +103,7 @@ export default function Dashboard() {
     if (apiKey) formData.append("api_key", apiKey);
 
     try {
-      const response = await fetch(`${API}/api/scan`, {
+      const response = await fetch("/api/scan", {
         method: "POST",
         body: formData,
       });
@@ -115,7 +115,7 @@ export default function Dashboard() {
         setError(result.error || "Scan failed. Please try again.");
       }
     } catch (err) {
-      setError("Could not connect to the AI server. Make sure the backend is running.");
+      setError("AI Analysis failed. Please check your internet connection or API key.");
       console.error(err);
     } finally {
       setIsScanning(false);
