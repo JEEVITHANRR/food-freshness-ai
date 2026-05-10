@@ -15,21 +15,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Gemini API key is required. Please provide one in Settings or set GEMINI_API_KEY environment variable." }, { status: 400 });
     }
 
-    // List of models to try in order of preference
+    // Cleaned up list of modern, stable Gemini models
     const modelsToTry = [
       "gemini-1.5-flash", 
-      "gemini-1.5-flash-latest", 
       "gemini-1.5-pro", 
-      "gemini-1.5-pro-latest",
-      "gemini-1.5-flash-8b",
-      "gemini-pro-vision"
+      "gemini-1.5-flash-8b"
     ];
     let lastError: any = null;
     let data = null;
 
-    // Convert file to base64 once
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const base64Image = buffer.toString("base64");
+    // Convert file to base64
+    const arrayBuffer = await file.arrayBuffer();
+    const base64Image = Buffer.from(arrayBuffer).toString("base64");
 
     const prompt = `
       Analyze this food image and provide a structured JSON response.
@@ -57,7 +54,8 @@ export async function POST(req: NextRequest) {
     // Try models one by one
     for (const modelName of modelsToTry) {
       try {
-        const model = genAI.getGenerativeModel({ model: modelName }, { apiVersion: "v1" });
+        console.log(`Trying Gemini model: ${modelName}`);
+        const model = genAI.getGenerativeModel({ model: modelName });
 
         const result = await model.generateContent([
           prompt,
@@ -88,7 +86,11 @@ export async function POST(req: NextRequest) {
     if (!data) {
       return NextResponse.json({ 
         success: false, 
-        error: `AI failed: ${lastError?.message || "Unknown error"}. Please ensure your API key from AI Studio is valid and has the Generative Language API enabled.` 
+        error: `All AI models failed. Last error: ${lastError?.message || "Unknown error"}. 
+        💡 Troubleshooting: 
+        1. Check if GEMINI_API_KEY is correct in Vercel.
+        2. Ensure 'Generative Language API' is enabled in Google Cloud.
+        3. Make sure your key has access to 'gemini-1.5-flash'.`
       }, { status: 500 });
     }
 
