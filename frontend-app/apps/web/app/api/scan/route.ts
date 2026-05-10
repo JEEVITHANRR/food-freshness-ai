@@ -15,12 +15,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Gemini API key is required. Please provide one in Settings or set GEMINI_API_KEY environment variable." }, { status: 400 });
     }
 
-    // Initialize Gemini with the most compatible model
-    const genAI = new GoogleGenerativeAI(apiKey);
-    // Use gemini-1.5-flash as default, it's the most widely available
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // List of models to try in order of preference
+    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b"];
+    let lastError = null;
+    let data = null;
 
-    // Convert file to base64
+    // Convert file to base64 once
     const buffer = Buffer.from(await file.arrayBuffer());
     const base64Image = buffer.toString("base64");
 
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       Return ONLY a JSON object with this exact structure:
       {
         "total_count": number,
-        "model_used": "gemini-1.5-flash",
+        "model_used": "string",
         "items": [
           {
             "name": "item name",
@@ -44,23 +44,44 @@ export async function POST(req: NextRequest) {
       }
     `;
 
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: base64Image,
-          mimeType: file.type,
-        },
-      },
-    ]);
+    // Try models one by one
+    for (const modelName of modelsToTry) {
+      try {
+        console.log(`Attempting scan with model: ${modelName}`);
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: modelName });
 
-    const response = await result.response;
-    const text = response.text();
-    
-    // Extract JSON from the response text (Gemini sometimes adds markdown blocks)
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    const jsonString = jsonMatch ? jsonMatch[0] : text;
-    const data = JSON.parse(jsonString);
+        const result = await model.generateContent([
+          prompt,
+          {
+            inlineData: {
+              data: base64Image,
+              mimeType: file.type,
+            },
+          },
+        ]);
+
+        const response = await result.response;
+        const text = response.text();
+        
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        const jsonString = jsonMatch ? jsonMatch[0] : text;
+        data = JSON.parse(jsonString);
+        data.model_used = modelName; // Track which one worked
+        
+        break; // Success!
+      } catch (err: any) {
+        console.warn(`Model ${modelName} failed:`, err.message);
+        lastError = err;
+        continue; // Try next model
+      }
+    }
+
+    if (!data) {
+      throw lastError || new Error("All AI models failed to process the image");
+    }
+
+    return NextResponse.json({ success: true, data });
 
     return NextResponse.json({ success: true, data });
 
