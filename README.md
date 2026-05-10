@@ -359,4 +359,3 @@ For questions or support, please open an issue on GitHub.
 <p align="center">
   ⭐ Star this repo if you find it helpful!
 </p>
-https://food-freshness-ai-nqmgcwuhnwet9aaqqzyof3.streamlit.app
