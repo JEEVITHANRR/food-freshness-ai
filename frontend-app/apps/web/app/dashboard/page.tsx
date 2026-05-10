@@ -43,8 +43,8 @@ import { Button } from "@workspace/ui/components/button";
 import SectionReveal from "@/components/SectionReveal";
 import ScanningEffect from "@/components/ScanningEffect";
 
-const BACKEND_API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const FRONTEND_API = ""; // Use relative path for internal Vercel functions
+const BACKEND_API = ""; // Fully self-contained on Vercel
+const FRONTEND_API = ""; 
 
 type HealthData = { status: string; modules: Record<string, boolean>; endpoints: string[] };
 
