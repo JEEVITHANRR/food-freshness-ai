@@ -17,9 +17,9 @@ export async function POST(req: NextRequest) {
 
     // Cleaned up list of modern, stable Gemini models
     const modelsToTry = [
-      "gemini-1.5-flash", 
-      "gemini-1.5-pro", 
-      "gemini-1.5-flash-8b"
+      "gemini-3.1-flash", 
+      "gemini-3.1-pro", 
+      "gemini-2.5-flash"
     ];
     let lastError: any = null;
     let data = null;
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       // Diagnostic step: Try to list available models to see what the key can actually access
       let availableModels = "Unknown";
       try {
-        const listResult = await genAI.getGenerativeModel({ model: "gemini-1.5-flash" }).listModels();
+        const listResult = await genAI.getGenerativeModel({ model: "gemini-3.1-flash" }).listModels();
         availableModels = JSON.stringify(listResult);
       } catch (listErr: any) {
         availableModels = `Failed to list: ${listErr.message}`;

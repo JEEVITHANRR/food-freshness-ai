@@ -81,10 +81,9 @@ def detect_and_count_items(image_path):
         # Try different Gemini models available for this key
         # Prioritize Lite/Flash models for better quota/speed
         models_to_try = [
-            'gemini-1.5-flash',
-            'gemini-1.5-pro',
-            'gemini-1.5-flash-8b',
-            'gemini-1.0-pro-vision-latest'
+            'gemini-3.1-flash',
+            'gemini-3.1-pro',
+            'gemini-2.5-flash'
         ]
         
         last_error = None
