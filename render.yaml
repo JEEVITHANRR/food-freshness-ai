@@ -1,0 +1,24 @@
+services:
+  # Backend Service
+  - type: web
+    name: fresh-ai-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn fastapi_server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+
+  # Frontend Service (Next.js)
+  - type: web
+    name: fresh-ai-frontend
+    env: node
+    rootDir: frontend-app
+    buildCommand: npm install && npx turbo build --filter=web
+    startCommand: npx turbo start --filter=web
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          name: fresh-ai-backend
+          type: web
+          property: host
