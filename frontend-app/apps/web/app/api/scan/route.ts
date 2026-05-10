@@ -15,8 +15,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Gemini API key is required. Please provide one in Settings or set GEMINI_API_KEY environment variable." }, { status: 400 });
     }
 
-    // Initialize Gemini
+    // Initialize Gemini with the most compatible model
     const genAI = new GoogleGenerativeAI(apiKey);
+    // Use gemini-1.5-flash as default, it's the most widely available
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Convert file to base64
