@@ -16,7 +16,14 @@ export async function POST(req: NextRequest) {
     }
 
     // List of models to try in order of preference
-    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
+    const modelsToTry = [
+      "gemini-1.5-flash", 
+      "gemini-1.5-flash-latest", 
+      "gemini-1.5-pro", 
+      "gemini-1.5-pro-latest",
+      "gemini-1.5-flash-8b",
+      "gemini-pro-vision"
+    ];
     let lastError: any = null;
     let data = null;
 

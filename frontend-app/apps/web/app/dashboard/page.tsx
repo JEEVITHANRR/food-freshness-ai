@@ -43,7 +43,8 @@ import { Button } from "@workspace/ui/components/button";
 import SectionReveal from "@/components/SectionReveal";
 import ScanningEffect from "@/components/ScanningEffect";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const BACKEND_API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const FRONTEND_API = ""; // Use relative path for internal Vercel functions
 
 type HealthData = { status: string; modules: Record<string, boolean>; endpoints: string[] };
 
@@ -65,15 +66,15 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
 
   const fetchInventory = useCallback(async () => {
-    try { setLoading(true); const r = await fetch(`${API}/api/inventory/1`); const d = await r.json(); if(d.success) setInventory(d.data.items||[]); } catch(e){} finally { setLoading(false); }
+    try { setLoading(true); const r = await fetch(`${BACKEND_API}/api/inventory/1`); const d = await r.json(); if(d.success) setInventory(d.data.items||[]); } catch(e){} finally { setLoading(false); }
   }, []);
 
   const fetchAnalytics = useCallback(async () => {
-    try { setLoading(true); const r = await fetch(`${API}/api/analytics/1`); const d = await r.json(); if(d.success) setAnalytics(d.data); } catch(e){} finally { setLoading(false); }
+    try { setLoading(true); const r = await fetch(`${BACKEND_API}/api/analytics/1`); const d = await r.json(); if(d.success) setAnalytics(d.data); } catch(e){} finally { setLoading(false); }
   }, []);
 
   const fetchHistory = useCallback(async () => {
-    try { setLoading(true); const r = await fetch(`${API}/api/history/1`); const d = await r.json(); if(d.success) setHistory(d.data.scans||[]); } catch(e){} finally { setLoading(false); }
+    try { setLoading(true); const r = await fetch(`${BACKEND_API}/api/history/1`); const d = await r.json(); if(d.success) setHistory(d.data.scans||[]); } catch(e){} finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
@@ -103,7 +104,7 @@ export default function Dashboard() {
     if (apiKey) formData.append("api_key", apiKey);
 
     try {
-      const response = await fetch(`${API}/api/scan`, {
+      const response = await fetch(`${FRONTEND_API}/api/scan`, {
         method: "POST",
         body: formData,
       });
@@ -771,7 +772,7 @@ export default function Dashboard() {
                             <div className="flex items-center gap-6">
                                <div className="w-16 h-16 rounded-2xl bg-[#0e1511] flex items-center justify-center text-[#4edea3] overflow-hidden">
                                   {scan.image_path ? (
-                                    <img src={`${API}${scan.image_path}`} alt="Scan" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                                    <img src={`${BACKEND_API}${scan.image_path}`} alt="Scan" className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
                                   ) : (
                                     <Camera size={24} />
                                   )}
