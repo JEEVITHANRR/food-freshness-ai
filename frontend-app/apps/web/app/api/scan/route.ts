@@ -84,13 +84,27 @@ export async function POST(req: NextRequest) {
     }
 
     if (!data) {
+      // Diagnostic step: Try to list available models to see what the key can actually access
+      let availableModels = "Unknown";
+      try {
+        const listResult = await genAI.getGenerativeModel({ model: "gemini-1.5-flash" }).listModels();
+        availableModels = JSON.stringify(listResult);
+      } catch (listErr: any) {
+        availableModels = `Failed to list: ${listErr.message}`;
+      }
+
       return NextResponse.json({ 
         success: false, 
         error: `All AI models failed. Last error: ${lastError?.message || "Unknown error"}. 
+        
+        🔍 Diagnostics:
+        - Last model tried: ${modelsToTry[modelsToTry.length - 1]}
+        - Available models for your key: ${availableModels}
+        
         💡 Troubleshooting: 
-        1. Check if GEMINI_API_KEY is correct in Vercel.
-        2. Ensure 'Generative Language API' is enabled in Google Cloud.
-        3. Make sure your key has access to 'gemini-1.5-flash'.`
+        1. Ensure your API Key is from AI Studio (aistudio.google.com).
+        2. Ensure the 'Generative Language API' is enabled.
+        3. Try creating a NEW API key if this one is old.`
       }, { status: 500 });
     }
 
